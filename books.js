@@ -1,3 +1,5 @@
+let books;
+
 async function renderBooks(filter) {
   // This const let's us pick the select .books class from the html.
   const booksWrapper = document.querySelector(".books");
@@ -7,7 +9,7 @@ async function renderBooks(filter) {
   if (!books) {
   books = await getBooks();
   }
-  
+
   booksWrapper.classList.remove('books__loading')
 
   if (filter === "LOW_TO_HIGH") {
