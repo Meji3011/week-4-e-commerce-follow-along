@@ -1,36 +1,104 @@
-function renderBooks() {
+async function renderBooks(filter) {
+  // This const let's us pick the select .books class from the html.
   const booksWrapper = document.querySelector(".books");
 
-  const books = getBooks();
-  console.log(books);
+  booksWrapper.classList += ' books__loading'
 
-  booksWrapper.innerHTML = `<div class="book">
+  if (!books) {
+  books = await getBooks();
+  }
+  
+  booksWrapper.classList.remove('books__loading')
+
+  if (filter === "LOW_TO_HIGH") {
+    books.sort((a, b) => (a.salePrice || a.originalPrice) - (b.salePrice || b.originalPrice));
+  } else if (filter === "HIGH_TO_LOW") {
+    books.sort((a, b) => (b.salePrice || b.originalPrice) - (a.salePrice || a.originalPrice));
+  } else if (filter === "RATING") {
+    books.sort((a, b) => b.rating - a.rating);
+  } else if (filter === "ALPHABETICAL") {
+    books.sort ((a, b) => a.title.localeCompare(b.title));
+  }
+
+  const booksHtml = books
+    .map((book) => {
+      return `<div class="book">
             <figure class="book__img--wrapper">
-              <img class="book__img" src="${books[0].url}" alt="">
+              <img class="book__img" src="${book.url}" alt="">
             </figure>
             <div class="book__title">
-              Atomic Habits
+              ${book.title}
             </div>
             <div class="book__ratings">
-              <i class="fas fa-star"></i>
-              <i class="fas fa-star"></i>
-              <i class="fas fa-star"></i>
-              <i class="fas fa-star"></i>
-              <i class="fas fa-star-half-alt"></i>
+              ${ratingsHTML(book.rating)}
             </div>
             <div class="book__price">
-              <span class="book__price--normal">$59.95</span> $14.95
+              ${pricesHTML(book.originalPrice, book.salePrice)}
             </div>
           </div>`;
+    })
+    .join("");
+
+  booksWrapper.innerHTML = booksHtml;
+
+  console.log(booksHtml)
 }
 
-setTimeout(() => {
-  renderBooks();
-});
+
+
+renderBooks();
+
+function filterBooks(event) {
+  renderBooks(event.target.value);
+}
+
+// This is the original pricesHTML function that I wrote, which is not the best way.
+// The easier way is the uncommented version, where you don't even need to write a else
+// condition since there are only two conditions we consider in this situation.
+// function pricesHTML(originalPrice, salePrice) {
+//   let priceHTML = "";
+
+//   if (!salePrice) {
+//     priceHTML += `$${originalPrice.toFixed(2)}`;
+//   } else {
+//     priceHTML += `<span class="book__price--normal">$${originalPrice.toFixed(
+//       2
+//     )}</span> $${salePrice.toFixed(2)}`;
+//   }
+
+function pricesHTML(originalPrice, salePrice) {
+  if (!salePrice) {
+    return `$${originalPrice.toFixed(2)}`;
+  }
+  return `<span class="book__price--normal">$${originalPrice.toFixed(2)}</span> $${salePrice.toFixed(2)}`;
+}
+
+// This function takes a rating parameter and return it in the the <i> of different
+// star varaitions to represent the rating. This function is called in the
+// renderBooks function with book.rating as the argument.
+function ratingsHTML(rating) {
+  let ratingHTML = "";
+
+  for (let i = 0; i < Math.floor(rating); i++) {
+    ratingHTML += '<i class="fas fa-star"></i>\n';
+  }
+
+  if (!Number.isInteger(rating)) {
+    ratingHTML += '<i class="fas fa-star-half-alt"></i>\n';
+  }
+
+  for (let i = 5; i > Math.ceil(rating); i--) {
+    ratingHTML += '<i class="far fa-star"></i>\n';
+  }
+
+  return ratingHTML;
+}
 
 // FAKE DATA
 function getBooks() {
-  return [
+  return new Promise((resolve) => {
+  setTimeout(() => {
+  resolve([
     {
       id: 1,
       title: "Crack the Coding Interview",
@@ -119,5 +187,7 @@ function getBooks() {
       salePrice: null,
       rating: 4.5,
     },
-  ];
+  ]);
+}, 1000);
+  });
 }
